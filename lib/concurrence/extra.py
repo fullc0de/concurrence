@@ -50,9 +50,11 @@ class TaskletPool(object):
     TRESHOLD = 2.0
     INIT_WORKERS = 2
 
-    def __init__(self):
+    def __init__(self, worker_timeout = TIMEOUT_NEVER, worker_timeout_relative = True):
         self._queue = Deque()
         self._workers = []
+        self._worker_timeout = worker_timeout
+        self._worker_timeout_relative = worker_timeout_relative
         for i in range(self.INIT_WORKERS):
             self._add_worker()
         self._adjuster = Tasklet.interval(1.0, self._adjust, daemon = True)()
@@ -70,6 +72,7 @@ class TaskletPool(object):
         #TODO remove workers when no longer needed
 
     def run(self):
+        Tasklet.set_current_timeout(self._worker_timeout, self._worker_timeout_relative)
         while True:
             try:
                 f, args, kwargs = self._queue.popleft(True, TIMEOUT_NEVER)

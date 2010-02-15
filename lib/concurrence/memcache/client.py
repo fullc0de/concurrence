@@ -113,16 +113,11 @@ class CommandBatch(object):
         self._target._defer_commands(self._cmds, result_channel)
         return result_channel
 
-class MemcacheTaskletPool(TaskletPool):
-    def run(self):
-        Tasklet.set_current_timeout(2.0, False)
-        super(MemcacheTaskletPool, self).run()
-
-
 class MemcacheConnection(object):
     log = logging.getLogger("MemcacheConnection")
 
-    _tasklet_pool = MemcacheTaskletPool()
+    _tasklet_pool = TaskletPool(worker_timeout = 2.0, 
+                                worker_timeout_relative = False)
 
     def __init__(self, address, protocol = "text", codec = "default"):
 
