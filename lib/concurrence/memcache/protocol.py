@@ -15,23 +15,15 @@ class MemcacheProtocol(object):
 class MemcacheTextProtocol(MemcacheProtocol):
     def __init__(self, codec = "default"):
         self.set_codec(codec)
-        self._rcache = {}
-        self._wcache = {}
-        import inspect
-        for name, member in inspect.getmembers(self):
-            if name.startswith('read_'):
-                self._rcache[name[5:]] = member
-            elif name.startswith('write_'):
-                self._wcache[name[6:]] = member
 
     def set_codec(self, codec):
         self._codec = MemcacheCodec.create(codec)
 
     def read(self, cmd, reader):
-        return self._rcache[cmd](reader)
+        return getattr(self, 'read_' + cmd)(reader)
 
     def write(self, cmd, writer, args):
-        return self._wcache[cmd](writer, *args)
+        return getattr(self, 'write_' + cmd)(writer, *args)
 
     def _read_result(self, reader, value = None):
         response_line = reader.read_line()
