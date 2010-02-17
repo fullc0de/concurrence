@@ -5,6 +5,7 @@
 
 #TODO timeout
 #TODO asyn dns resolve
+from __future__ import with_statement
 
 import time
 import logging

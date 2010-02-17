@@ -5,10 +5,7 @@
 __version__ = '0.3.1' #remember to update setup.py
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
 
-TIMEOUT_NEVER = -1
-TIMEOUT_CURRENT = -2
-
-from concurrence.core import dispatch, quit, disable_threading, get_version_info
+from concurrence.core import dispatch, quit, disable_threading, get_version_info, TIMEOUT_NEVER, TIMEOUT_CURRENT
 from concurrence.core import Channel, Tasklet, Message, Deque, FileDescriptorEvent, SignalEvent, TimeoutEvent
 from concurrence.core import TimeoutError, TaskletError, JoinError
 from concurrence.extra import TaskletPool, DeferredQueue, Lock, Semaphore, QueueChannel

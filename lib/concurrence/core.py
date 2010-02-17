@@ -28,7 +28,7 @@ if '-Xleak' in sys.argv:
     DEBUG_LEAK = True
 
 from signal import SIGINT
-from concurrence import _event, TIMEOUT_CURRENT, TIMEOUT_NEVER
+from concurrence import _event
 
 def get_version_info():
     return {'libevent_version': _event.version(),
@@ -44,6 +44,8 @@ EXIT_CODE_SIGINT = 127
 EXIT_CODE_TIMEOUT = 128
 
 TIMEOUT_ABSOLUTE_CUTOFF = 3600 * 24
+TIMEOUT_NEVER = -1
+TIMEOUT_CURRENT = -2
 
 class TimeoutError(Exception):
     """This exception can be raised by various methods that accept *timeout* parameters."""
@@ -588,7 +590,7 @@ class Tasklet(stackless.tasklet):
             return TIMEOUT_NEVER
         elif self._timeout_time < TIMEOUT_ABSOLUTE_CUTOFF:
             return self._timeout_time
-        else:            
+        else:
             timeout = self._timeout_time - time.time()
             if timeout < 0: timeout = 0.0 #expire immediately
             return timeout
