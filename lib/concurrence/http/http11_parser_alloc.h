@@ -3,6 +3,13 @@
 
 #include "http11_parser.h"
 
-http_parser *http_parser_alloc(void);
+http_parser *http_parser_alloc(void *obj, element_cb request_method,
+                                          element_cb request_uri,
+                                          element_cb fragment,
+                                          element_cb request_path,
+                                          element_cb query_string,
+                                          element_cb http_version,
+                                          element_cb header_done);
+void http_parser_free(http_parser *);
 
 #endif
