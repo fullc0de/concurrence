@@ -31,19 +31,19 @@ setup(
   ext_modules=[
     Extension("concurrence._event", ["lib/concurrence/concurrence._event.pyx"], include_dirs = libevent_include_dirs, library_dirs = libevent_library_dirs, libraries = ["event"]),
     Extension("concurrence.io._io", ["lib/concurrence/io/concurrence.io._io.pyx", "lib/concurrence/io/io_base.c"]),
-    Extension("concurrence.database.mysql._mysql", ["lib/concurrence/database/mysql/concurrence.database.mysql._mysql.pyx"], 
-              include_dirs=['lib/concurrence/io']
-              ),
+    Extension("concurrence.http._http", ["lib/concurrence/http/concurrence.http._http.pyx", "lib/concurrence/http/http11_parser.c", "lib/concurrence/http/http11_parser_alloc.c"]),
+    Extension("concurrence.database.mysql._mysql", ["lib/concurrence/database/mysql/concurrence.database.mysql._mysql.pyx"],
+              include_dirs=['lib/concurrence/io']),
     ],
   cmdclass = {'build_ext': build_ext},
     classifiers = [
- 	        'Development Status :: 4 - Beta',
- 	        'Environment :: Console',
- 	        'Environment :: Web Environment',
- 	        'Intended Audience :: Developers',
- 	        'License :: OSI Approved :: BSD License',
- 	        'Operating System :: OS Independent',
- 	        'Programming Language :: Python',
- 	        'Topic :: Software Development :: Libraries :: Python Modules'],
+             'Development Status :: 4 - Beta',
+             'Environment :: Console',
+             'Environment :: Web Environment',
+             'Intended Audience :: Developers',
+             'License :: OSI Approved :: BSD License',
+             'Operating System :: OS Independent',
+             'Programming Language :: Python',
+             'Topic :: Software Development :: Libraries :: Python Modules'],
 )
 

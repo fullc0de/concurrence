@@ -32,6 +32,7 @@ clean:
 	rm -rf lib/concurrence/database/mysql/concurrence.database.mysql._mysql.c
 	rm -rf lib/concurrence/concurrence._event.c
 	rm -rf lib/concurrence/io/concurrence.io._io.c
+	rm -rf lib/concurrence/http/concurrence.http._http.c
 	rm -rf test/htmlcov
 
 dist_clean: clean
