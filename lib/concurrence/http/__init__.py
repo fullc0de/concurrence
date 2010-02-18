@@ -3,11 +3,13 @@
 # This module is part of the Concurrence Framework and is released under
 # the New BSD License: http://www.opensource.org/licenses/bsd-license.php
 
+from concurrence.http._http import HTTPParser, HTTPParserError
+
 class HTTPError(Exception): pass
 
 class HTTPRequest(object):
     """A class representing a HTTP request."""
-    
+
     def __init__(self, path = None, method = None, host = None):
         """Create a new http request for *path* using *method* to *host*."""
         self.path = path
@@ -17,11 +19,11 @@ class HTTPRequest(object):
         self._body = None
 
     def add_header(self, key, value):
-        """Adds a new header to the request with name *key* and given *value*."""        
+        """Adds a new header to the request with name *key* and given *value*."""
         self.headers.append((key, value))
 
     def _set_body(self, body):
-        if body is not None: 
+        if body is not None:
             assert type(body) == str
             self.add_header('Content_length', len(body))
         self._body = body
@@ -33,7 +35,7 @@ class HTTPRequest(object):
 
 class HTTPResponse(object):
     """Represents a HTTP Response."""
-    
+
     def __init__(self):
         self.headers = []
         self.status = ''

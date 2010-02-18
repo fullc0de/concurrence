@@ -11,6 +11,7 @@ http_parser *http_parser_alloc(void *obj, element_cb request_method,
                                           element_cb http_version,
                                           element_cb header_done,
                                           field_cb field);
+
 void http_parser_free(http_parser *);
 
 #endif
