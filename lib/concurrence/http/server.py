@@ -36,17 +36,17 @@ class WSGIInputStream(object):
         if content_length is None:
             self._channel = None
             self._n = None
-            self._file = None        
+            self._file = None
         else:
             self._n = int(content_length)
             self._file = reader.file()
             self._channel = Channel()
-    
+
     def _read_request_data(self):
         if self._n is not None:
             self._channel.receive() #wait till handler has read all input data
 
-    def read(self, n):  
+    def read(self, n):
         if self._n > 0:
             data = self._file.read(min(self._n, n))
             self._n -= len(data)
@@ -58,7 +58,7 @@ class WSGIInputStream(object):
             return data
         else:
             return '' #EOF
-        
+
     def readline(self):
         assert False, 'TODO'
 
@@ -79,10 +79,10 @@ class WSGIErrorStream(object):
     def flush(self):
         assert False, 'TODO'
 
-        
+
 class WSGIRequest(object):
     log = logging.getLogger('WSGIRequest')
-    
+
     STATE_INIT = 0
     STATE_WAIT_FOR_REQUEST = 1
     STATE_READING_HEADER = 2
@@ -91,18 +91,18 @@ class WSGIRequest(object):
     STATE_WRITING_HEADER = 5
     STATE_WRITING_DATA = 6
     STATE_FINISHED = 7
-    
+
     _disallowed_application_headers = set(['Date', 'Server'])
 
     def __init__(self, server):
-        self._server = server        
+        self._server = server
         self.version = None #http version
         self.environ = {}
         self.response_headers = []
         self.status = httplib.NOT_FOUND #or internal server error?
-        self.exc_info = None     
-        self.state = self.STATE_INIT   
-        
+        self.exc_info = None
+        self.state = self.STATE_INIT
+
     def start_response(self, status, response_headers, exc_info = None):
         self.status = status
         self.response_headers = response_headers
@@ -113,52 +113,52 @@ class WSGIRequest(object):
             if _key == key:
                 return value
         return None
-        
+
     def get_request_header(self, key):
         http_key = 'HTTP_' + key.replace('-', '_').upper()
         return self.environ.get(http_key, None)
 
     def write_response(self, response, writer):
         self.state = self.STATE_WRITING_HEADER
-        
+
         if self.version == 'HTTP/1.0':
             chunked = False
         else:
             chunked = True
 
         writer.clear()
-        
-        writer.write_bytes("%s %s\r\n" % (self.version, self.status))        
+
+        writer.write_bytes("%s %s\r\n" % (self.version, self.status))
         for header_name, header_value in self.response_headers:
             if header_name in self._disallowed_application_headers: continue
             writer.write_bytes("%s: %s\r\n" % (header_name, header_value))
         writer.write_bytes("Date: %s\r\n" % rfc822.formatdate())
-        writer.write_bytes("Server: %s\r\n" % SERVER_ID) 
+        writer.write_bytes("Server: %s\r\n" % SERVER_ID)
 
         if chunked:
             writer.write_bytes("Transfer-Encoding: chunked\r\n")
         else:
             response = ''.join(response)
             writer.write_bytes("Content-length: %d\r\n" % len(response))
-        
+
         writer.write_bytes("\r\n")
-    
+
         self.state = self.STATE_WRITING_DATA
-        
+
         if chunked:
             for chunk in response:
                 writer.write_bytes("%x;\r\n" % len(chunk))
                 writer.write_bytes(chunk)
                 writer.write_bytes("\r\n")
-                
+
             writer.write_bytes("0\r\n\r\n")
         else:
             writer.write_bytes(response)
 
         writer.flush() #TODO use special header to indicate no flush needed
-        
+
         self.state = self.STATE_FINISHED
-    
+
     def handle_request(self, application):
         try:
             return application(self.environ, self.start_response)
@@ -167,7 +167,7 @@ class WSGIRequest(object):
         except:
             self.log.exception("unhandled exception while handling request")
             return self._server.internal_server_error(self.environ, self.start_response)
-      
+
     def read_request_data(self):
         self.environ['wsgi.input']._read_request_data()
 
@@ -178,17 +178,17 @@ class WSGIRequest(object):
     def _read_request(self, reader):
 
         self.state = self.STATE_WAIT_FOR_REQUEST
-        
-        #setup readline iterator        
+
+        #setup readline iterator
         lines = reader.read_lines()
-        
+
         #parse status line, this will block to read the first request line
         line = lines.next().split()
-        
+
         self.state = self.STATE_READING_HEADER
-        
+
         u = urlparse.urlparse(line[1])
-        
+
         self.method = line[0]
         if self.method not in ['GET', 'POST']:
             raise HTTPError('Unsupported method: %s' % self.method)
@@ -202,27 +202,27 @@ class WSGIRequest(object):
         self.environ['SCRIPT_NAME'] = '' #TODO
         self.environ['PATH_INFO'] = u[2]
         self.environ['QUERY_STRING'] = u[4]
-        
+
         self.environ['wsgi.url_scheme'] = 'http'
         self.environ['wsgi.multiprocess'] = False
         self.environ['wsgi.multithread'] = True
         self.environ['wsgi.run_once'] = False
         self.environ['wsgi.version'] = (1, 0)
-        
+
         #rest of request headers
         for line in lines:
             if not line: break
-            key, value = line.split(': ')
+            key, value = line.split(':', 1)
             key = key.replace('-', '_').upper()
             value = value.strip()
-            
-            http_key = 'HTTP_' + key 
+
+            http_key = 'HTTP_' + key
             if http_key in self.environ:
                 self.environ[http_key] += ',' + value # comma-separate multiple headers
             else:
                 self.environ[http_key] = value
 
-        #wsgi complience 
+        #wsgi complience
         if 'HTTP_CONTENT_LENGTH' in self.environ:
             self.environ['CONTENT_LENGTH'] = self.environ['HTTP_CONTENT_LENGTH']
 
@@ -232,7 +232,7 @@ class WSGIRequest(object):
         #setup required wsgi streams
         self.environ['wsgi.input'] = WSGIInputStream(self, reader)
         self.environ['wsgi.errors'] = WSGIErrorStream()
-        
+
         if not 'HTTP_HOST' in self.environ:
             if self.version == 'HTTP/1.0':
                 #ok in version 1.0, TODO what should host in wsgi environ be?
@@ -250,9 +250,9 @@ class WSGIRequest(object):
         self.environ['SERVER_NAME'] = host
         self.environ['SERVER_PORT'] = port
         self.environ['SERVER_PROTOCOL'] = self.version
-        
+
         self.state = self.STATE_REQUEST_READ
-        
+
 
 class HTTPHandler(object):
     log = logging.getLogger('HTTPHandler')
@@ -263,12 +263,12 @@ class HTTPHandler(object):
     class MSG_REQUEST_READ(Message): pass
     class MSG_READ_ERROR(Message): pass
     class MSG_WRITE_ERROR(Message): pass
-    
+
     def __init__(self, server):
-        self._server = server     
+        self._server = server
         self._reque = ReorderQueue()
 
-    def write_responses(self, control, stream):        
+    def write_responses(self, control, stream):
         try:
             for msg, (request, response), kwargs in Tasklet.receive():
                 request.write_response(response, stream.writer)
@@ -281,12 +281,12 @@ class HTTPHandler(object):
         try:
             while True:
                 request = WSGIRequest(self._server)
-                request.read_request(stream.reader)                
+                request.read_request(stream.reader)
                 self.MSG_REQUEST_READ.send(control)(request, None)
                 request.read_request_data()
         except EOFError, e:
             if request.state == request.STATE_WAIT_FOR_REQUEST:
-                pass #this is normal at the end of the http KA connection (client closes) 
+                pass #this is normal at the end of the http KA connection (client closes)
         except IOError, e:
             if e.errno == 104 and request.state == request.STATE_WAIT_FOR_REQUEST:
                 pass #connection reset by peer while waiting for request
@@ -299,12 +299,12 @@ class HTTPHandler(object):
 
     def handle_request(self, control, request, application):
         response = self._server.handle_request(request, application)
-        self.MSG_REQUEST_HANDLED.send(control)(request, response)       
+        self.MSG_REQUEST_HANDLED.send(control)(request, response)
 
     def handle(self, socket, application):
         stream = BufferedStream(socket)
         #implements http1.1 keep alive handler
-        #there are several concurrent tasks for each connection; 
+        #there are several concurrent tasks for each connection;
         #1 for reading requests, 1 or more for handling requests and 1 for writing responses
         #the current task (the one created to handle the socket connection) is the controller task,
         #e.g. it coordinates the actions of it's children by message passing
@@ -322,18 +322,18 @@ class HTTPHandler(object):
         #4. control sends message to writer to start writing the response (MSG_WRITE_RESPONSE)
         #5. writer notififies control when response is wriiten (MSG_RESPONSE_WRITTEN)
 
-        #control wait for msgs to arrive:        
+        #control wait for msgs to arrive:
         for msg, (request, response), kwargs in Tasklet.receive():
             if msg.match(self.MSG_REQUEST_READ):
                 #we use reque to be able to send the responses back in the correct order later
                 self._reque.start(request)
                 Tasklet.new(self.handle_request, name = 'request_handler')(control, request, application)
-                
+
             elif msg.match(self.MSG_REQUEST_HANDLED):
                 #we use reque to retire (send out) the responses in the correct order
                 for request, response in self._reque.finish(request, response):
                     self.MSG_WRITE_RESPONSE.send(response_writer)(request, response)
-                    
+
             elif msg.match(self.MSG_RESPONSE_WRITTEN):
                 if request.version == 'HTTP/1.0':
                     break #no keep-alive support in http 1.0
@@ -345,22 +345,22 @@ class HTTPHandler(object):
                 break #stop and close the connection
             elif msg.match(self.MSG_WRITE_ERROR):
                 break #stop and close the connection
-            else:   
+            else:
                 assert False, "unexpected msg in control loop"
 
         #kill reader and writer
         #any outstanding request will continue, but will exit by themselves
         response_writer.kill()
         request_reader.kill()
-   
+
         #close our side of the socket
         stream.close()
-        
+
 class WSGIServer(object):
     """A HTTP/1.1 Web server with WSGI application interface.
-    
-    Usage:: 
-    
+
+    Usage::
+
         def hello_world(environ, start_response):
             start_response("200 OK", [])
             return ["<html>Hello, world!</html>"]
@@ -369,7 +369,7 @@ class WSGIServer(object):
         server.serve(('localhost', 8080))
     """
     log = logging.getLogger('WSGIServer')
-    
+
     read_timeout = HTTP_READ_TIMEOUT
 
     def __init__(self, application, request_log_level = logging.DEBUG):
@@ -382,17 +382,17 @@ class WSGIServer(object):
         """Default WSGI application for creating a default `500 Internal Server Error` response on any
         unhandled exception.
         The default response will render a traceback with a text/plain content-type.
-        Can be overridden to provide a custom response."""           
+        Can be overridden to provide a custom response."""
         start_response('500 Internal Server Error', [('Content-type', 'text/plain')])
         return [traceback.format_exc(20)]
 
     def handle_request(self, request, application):
-        """All HTTP requests pass trough this method. 
+        """All HTTP requests pass trough this method.
         This method provides a hook for logging, statistics and or further processing w.r.t. the *request*."""
         response = request.handle_request(application)
         self.log.log(self._request_log_level, "%s %s", request.status, request.uri)
         return response
-        
+
     def handle_connection(self, socket):
         """All HTTP connections pass trough this method.
         This method provides a hook for logging, statistics and or further processing w.r.t. the connection."""
@@ -401,5 +401,5 @@ class WSGIServer(object):
     def serve(self, endpoint):
         """Serves the application at the given *endpoint*. The *endpoint* must be a tuple (<host>, <port>)."""
         return Server.serve(endpoint, self.handle_connection)
-                        
+
 

@@ -22,8 +22,23 @@ class BufferedReader(object):
     def clear(self):
         self.buffer.clear()
 
-    def _read_more(self):
-        #any partially read data will be put in front, otherwise normal clear:
+    def append(self):
+        """tries to append data from the underlying stream to the current buffer."""
+        if self.buffer.limit == self.buffer.capacity:
+            raise BufferOverflowError("while appending")
+        position, limit = self.buffer.position, self.buffer.limit
+        self.buffer.position = limit
+        self.buffer.limit = capacity
+        if not self.stream.read(self.buffer, TIMEOUT_CURRENT):
+            raise EOFError("while reading")
+        #put position back where we found it, and set new limit
+        self.buffer.limit = self.buffer.position
+        self.buffer.position = position
+
+    def fill(self):
+        """fills the readers buffer with data from the underlying stream.
+        any partially read data still in the buffer will be moved to the front of the buffer.
+        after reading from the stream, the buffer is flipped so that it can be read out by the reader."""
         self.buffer.compact()
         if not self.stream.read(self.buffer, TIMEOUT_CURRENT):
             raise EOFError("while reading")
@@ -32,26 +47,26 @@ class BufferedReader(object):
     def read_lines(self):
         """note that it cant read line accross buffer"""
         if self.buffer.remaining == 0:
-            self._read_more()
+            self.fill()
         while True:
             try:
                 yield self.buffer.read_line()
             except BufferUnderflowError:
-                self._read_more()
+                self.fill()
 
     def read_line(self):
         """note that it cant read line accross buffer"""
         if self.buffer.remaining == 0:
-            self._read_more()
+            self.fill()
         while True:
             try:
                 return self.buffer.read_line()
             except BufferUnderflowError:
-                self._read_more()
+                self.fill()
 
     def read_bytes_available(self):
         if self.buffer.remaining == 0:
-            self._read_more()
+            self.fill()
         return self.buffer.read_bytes(-1)
 
     def read_bytes(self, n):
@@ -64,27 +79,27 @@ class BufferedReader(object):
                 s.append(buffer.read_bytes(min(n, r)))
                 n -= r
             else:
-                self._read_more()
+                self.fill()
 
         return ''.join(s)
 
     def read_int(self):
         if self.buffer.remaining == 0:
-            self._read_more()
+            self.fill()
         while True:
             try:
                 return self.buffer.read_int()
             except BufferUnderflowError:
-                self._read_more()
+                self.fill()
 
     def read_short(self):
         if self.buffer.remaining == 0:
-            self._read_more()
+            self.fill()
         while True:
             try:
                 return self.buffer.read_short()
             except BufferUnderflowError:
-                self._read_more()
+                self.fill()
 
 class BufferedWriter(object):
     def __init__(self, stream, buffer):
@@ -252,7 +267,7 @@ class CompatibleFile(object):
                 yield buffer.read_line(True)
             except BufferUnderflowError:
                 try:
-                    reader._read_more()
+                    reader.fill()
                 except EOFError:
                     buffer.flip()
                     yield buffer.read_bytes(-1)
@@ -268,7 +283,7 @@ class CompatibleFile(object):
             while True:
                 s.append(buffer.read_bytes(-1))
                 try:
-                    reader._read_more()
+                    reader.fill()
                 except EOFError:
                     buffer.flip()
                     break
@@ -280,7 +295,7 @@ class CompatibleFile(object):
                     n -= r
                 else:
                     try:
-                        reader._read_more()
+                        reader.fill()
                     except EOFError:
                         buffer.flip()
                         break
