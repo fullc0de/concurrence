@@ -34,25 +34,25 @@ cdef extern from "Python.h":
 cdef class HTTPParser
 
 cdef void cb_request_method(void *data, char *at, size_t length):
-    (<HTTPParser>data).request_method(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._request_method(PyString_FromStringAndSize(at, length))
 
 cdef void cb_request_uri(void *data, char *at, size_t length):
-    (<HTTPParser>data).request_uri(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._request_uri(PyString_FromStringAndSize(at, length))
 
 cdef void cb_fragment(void *data, char *at, size_t length):
-    (<HTTPParser>data).fragment(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._fragment(PyString_FromStringAndSize(at, length))
 
 cdef void cb_request_path(void *data, char *at, size_t length):
-    (<HTTPParser>data).request_path(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._request_path(PyString_FromStringAndSize(at, length))
 
 cdef void cb_query_string(void *data, char *at, size_t length):
-    (<HTTPParser>data).query_string(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._query_string(PyString_FromStringAndSize(at, length))
 
 cdef void cb_http_version(void *data, char *at, size_t length):
-    (<HTTPParser>data).http_version(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._http_version(PyString_FromStringAndSize(at, length))
 
 cdef void cb_header_done(void *data, char *at, size_t length):
-    (<HTTPParser>data).header_done(PyString_FromStringAndSize(at, length))
+    (<HTTPParser>data)._header_done(PyString_FromStringAndSize(at, length))
 
 cdef class HTTPParser:
     """
@@ -74,13 +74,13 @@ cdef class HTTPParser:
     def __dealloc__(self):
         http_parser_free(self._parser)
 
-    def request_method(self, method):
+    cdef _request_method(self, method):
         print 'method:', method
 
-    def request_uri(self, uri):
+    cdef _request_uri(self, uri):
         print 'r_uri', uri
 
-    def http_version(self, version):
+    cdef _http_version(self, version):
         print 'version', repr(version)
 
     def execute(self):
