@@ -25,7 +25,8 @@ cdef extern from "http11_parser_alloc.h":
                                               element_cb request_path,
                                               element_cb query_string,
                                               element_cb http_version,
-                                              element_cb header_done)
+                                              element_cb header_done,
+                                              field_cb field)
     void http_parser_free(http_parser *)
 
 cdef extern from "Python.h":
@@ -54,6 +55,9 @@ cdef void cb_http_version(void *data, char *at, size_t length):
 cdef void cb_header_done(void *data, char *at, size_t length):
     (<HTTPParser>data).header_done(PyString_FromStringAndSize(at, length))
 
+cdef void cb_field(void *data, char *field, size_t flen, char *value, size_t vlen):
+    (<HTTPParser>data).field(PyString_FromStringAndSize(field, flen), PyString_FromStringAndSize(value, vlen))
+
 cdef class HTTPParser:
     """
     """
@@ -62,26 +66,44 @@ cdef class HTTPParser:
 
     def __cinit__(self, Buffer buffer):
         self._buffer = buffer
-        self._parser = http_parser_alloc(<void *>self, cb_request_method,
-                                          cb_request_uri,
-                                          cb_fragment,
-                                          cb_request_path,
-                                          cb_query_string,
-                                          cb_http_version,
-                                          cb_header_done)
+        self._parser = http_parser_alloc(<void *>self, cb_request_method, cb_request_uri, cb_fragment, cb_request_path, cb_query_string, cb_http_version, cb_header_done, cb_field)
         http_parser_init(self._parser)
 
     def __dealloc__(self):
         http_parser_free(self._parser)
 
-    def request_method(self, method):
-        print 'method:', method
+    cdef request_method(self, method):
+        pass
+        #print 'method:', repr(method)
 
-    def request_uri(self, uri):
-        print 'r_uri', uri
+    cdef query_string(self, qs):
+        pass
+        #print 'qs:', repr(qs)
 
-    def http_version(self, version):
-        print 'version', repr(version)
+    cdef request_path(self, path):
+        pass
+        #print 'path:', repr(path)
+
+
+    cdef fragment(self, fragment):
+        pass
+        #print 'fragment', repr(fragment)
+
+    cdef request_uri(self, uri):
+        pass
+        #print 'r_uri', uri
+
+    cdef http_version(self, version):
+        pass
+        #print 'version', repr(version)
+
+    cdef header_done(self, hd):
+        pass
+        #print 'header_done', repr(hd)
+
+    cdef field(self, name, value):
+        pass
+        #print 'field', repr(name), repr(value)
 
     def execute(self):
         return http_parser_execute(self._parser, <char *>self._buffer._buff, self._buffer._remaining(), self._buffer._position)
