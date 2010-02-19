@@ -41,9 +41,9 @@ cdef void cb_request_method(void *data, char *at, size_t length):
 cdef void cb_request_uri(void *data, char *at, size_t length):
     (<HTTPParser>data)._cb_request_uri(PyString_FromStringAndSize(at, length))
 
-cdef void cb_fragment(void *data, char *at, size_t length):
-    #(<HTTPParser>data)._cb_fragment(PyString_FromStringAndSize(at, length))
-    pass #unused for now, fragment is not part of cgi spec
+#cdef void cb_fragment(void *data, char *at, size_t length):
+#    (<HTTPParser>data)._cb_fragment(PyString_FromStringAndSize(at, length))
+#    unused for now, fragment is not part of cgi spec
 
 cdef void cb_request_path(void *data, char *at, size_t length):
     (<HTTPParser>data)._cb_request_path(PyString_FromStringAndSize(at, length))
@@ -72,7 +72,7 @@ cdef class HTTPParser:
     cdef readonly environ
 
     def __cinit__(self, Buffer buffer):
-        self._parser = http_parser_alloc(<void *>self, cb_request_method, cb_request_uri, cb_fragment, cb_request_path, cb_query_string, cb_http_version, cb_header_done, cb_field)
+        self._parser = http_parser_alloc(<void *>self, cb_request_method, cb_request_uri, NULL, cb_request_path, cb_query_string, cb_http_version, cb_header_done, cb_field)
         http_parser_init(self._parser)
 
     def __init__(self, Buffer buffer):

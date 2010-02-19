@@ -47,7 +47,8 @@ class HTTPConnection(object):
                 if parser.parse():
                     break #ok
                 else:
-                    reader.append() #extra fill, could not parse request with data currently in buffer
+                    #extra fill, could not parse request with data currently in buffer
+                    reader.append() 
 
         self._write_response()
         self._stream.close()
