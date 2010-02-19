@@ -161,6 +161,7 @@ class Socket(IOStream):
                 yield self.accept()
             except Exception:
                 self.log.exception("in accept_iter")
+                Tasklet.sleep(1.0) #prevent hogging
 
     def _connect(self, addr, timeout = TIMEOUT_CURRENT):
         assert self.state == self.STATE_INIT, "make sure socket is not already connected or closed"

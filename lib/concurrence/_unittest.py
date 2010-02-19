@@ -7,7 +7,7 @@ import unittest
 import logging
 import time
 
-from concurrence import dispatch, Tasklet, Channel, quit
+from concurrence import dispatch, Tasklet, Channel, quit, get_version_info
 from concurrence.core import EXIT_CODE_TIMEOUT
 
 from concurrence.io import IOStream, Socket
@@ -57,7 +57,7 @@ class TestSocket(object):
 
 class TestCase(unittest.TestCase):
     def setUp(self):
-        logging.debug("setUp %s", self)
+        logging.debug("setUp %s, %s", self, '; '.join(['%s: %s' % (k, v) for k, v in get_version_info().items()]))
 
     def tearDown(self):
         try:

@@ -25,6 +25,10 @@ __version__ = '0.3'
 
 import collections
 
+class EventError(Exception):
+    def __init__(self, msg):
+        Exception.__init__(self, msg + ": " + strerror(errno))
+
 cdef class __event
 cdef struct __list
 
@@ -65,10 +69,6 @@ EV_READ         = 0x02
 EV_WRITE        = 0x04
 EV_SIGNAL       = 0x08
 EV_PERSIST      = 0x10
-
-class EventError(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self, msg + ": " + strerror(errno))
 
 #keep a singly-linked list of events that are triggered during 1 call to 'loop'
 #we will append at the end, and our client will read from the front
@@ -181,6 +181,7 @@ def loop():
 
     return head != NULL
 
-#init libevent
-event_init()
+def init():
+    #init libevent
+    event_init()
 

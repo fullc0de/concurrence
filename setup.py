@@ -15,6 +15,13 @@ libevent_library_dirs = []
 #libevent_include_dirs = ['/opt/libevent/include']
 #libevent_library_dirs = ['/opt/libevent/lib']
 
+#alternatively you can set the correct libevent with environment variable CONCURRENCE_LIBEVENT_PREFIX
+import os
+if 'CONCURRENCE_LIBEVENT_PREFIX' in os.environ:
+    prefix = os.environ['CONCURRENCE_LIBEVENT_PREFIX']
+    libevent_include_dirs = ['%s/include' % prefix]
+    libevent_library_dirs = ['%s/lib' % prefix]
+
 VERSION = '0.3.1' #must be same as concurrence.__init__.py.__version__
 
 setup(
@@ -30,6 +37,7 @@ setup(
   packages = find_packages('lib'),
   ext_modules=[
     Extension("concurrence._event", ["lib/concurrence/concurrence._event.pyx"], include_dirs = libevent_include_dirs, library_dirs = libevent_library_dirs, libraries = ["event"]),
+    Extension("concurrence._event14", ["lib/concurrence/concurrence._event14.pyx"], include_dirs = libevent_include_dirs, library_dirs = libevent_library_dirs, libraries = ["event"]),
     Extension("concurrence.io._io", ["lib/concurrence/io/concurrence.io._io.pyx", "lib/concurrence/io/io_base.c"]),
     Extension("concurrence.http._http", ["lib/concurrence/http/concurrence.http._http.pyx", "lib/concurrence/http/http11_parser.c", "lib/concurrence/http/http11_parser_alloc.c"], include_dirs=['lib/concurrence/io']),
     Extension("concurrence.database.mysql._mysql", ["lib/concurrence/database/mysql/concurrence.database.mysql._mysql.pyx"],

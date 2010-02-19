@@ -28,14 +28,14 @@ if '-Xleak' in sys.argv:
     DEBUG_LEAK = True
 
 from signal import SIGINT
-from concurrence import _event
+from concurrence import event
 
 def get_version_info():
-    return {'libevent_version': _event.version(),
-            'libevent_method': _event.method()}
+    return {'libevent_version': event.version(),
+            'libevent_method': event.method()}
 
 if '-Xversion' in sys.argv:
-    print 'libevent: version: %s, method: %s' % (_event.version(),  _event.method())
+    print 'libevent: version: %s, method: %s' % (event.version(),  event.method())
     print 'python:', sys.version
 
 EXIT_CODE_OK = 0
@@ -69,19 +69,19 @@ class FileDescriptorEvent(Event):
 
     def __init__(self, fd, rw):
         if rw == 'r':
-            event_type = _event.EV_READ
+            event_type = event.EV_READ
         elif rw == 'w':
-            event_type = _event.EV_WRITE
+            event_type = event.EV_WRITE
         else:
             assert False, "rw must be one of ['r', 'w']"
-        self._event = _event.event(fd, event_type, self._on_event)
+        self._event = event.event(fd, event_type, self._on_event)
         self._channel = Channel() #this is were wait will block on
         self._current_callback = None
 
     def _on_event(self, event_type):
         if self._current_callback is None:
             return #already closed
-        if event_type & _event.EV_TIMEOUT:
+        if event_type & event.EV_TIMEOUT:
             self._current_callback(True)
         else:
             self._current_callback(False)
@@ -119,7 +119,7 @@ class SignalEvent(Event):
     def __init__(self, signo, callback, persist = True):
         self._persist = persist
         self._callback = callback
-        self._event = _event.event(signo, _event.EV_SIGNAL, self._on_event)
+        self._event = event.event(signo, event.EV_SIGNAL, self._on_event)
         self._event.add()
 
     def _on_event(self, event_type):
@@ -138,7 +138,7 @@ class TimeoutEvent(Event):
         self._persist = persist
         self._timeout = timeout
         self._callback = callback
-        self._event = _event.event(-1, _event.EV_TIMEOUT, self._on_event)
+        self._event = event.event(-1, event.EV_TIMEOUT, self._on_event)
         self._event.add(timeout)
 
     def _on_event(self, event_type):
@@ -811,7 +811,7 @@ def _dispatch(f = None):
             #make stackless need to use hard-switching, which is slow.
             #so we call 'loop' which blocks until something available.
             try:
-                _event.loop()
+                event.loop()
             except TaskletExit:
                 raise
             except:
@@ -821,9 +821,9 @@ def _dispatch(f = None):
             #call the callback which is available as the 'data' object of the event
             #some callbacks may trigger direct action (for instance timeouts, signals)
             #others might resume a waiting task (socket io).
-            while _event.has_next():
+            while event.has_next():
                 try:
-                    e, event_type, fd = _event.next()
+                    e, event_type, fd = event.next()
                     e.data(event_type)
                 except TaskletExit:
                     raise
