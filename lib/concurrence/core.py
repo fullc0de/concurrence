@@ -213,13 +213,13 @@ class Deque(collections.deque):
     def append(self, x):
         """Append item *x* to the end of the queue."""
         collections.deque.append(self, x)
-        if self.channel.balance < 0:
+        if self.channel.has_receiver():
             self.channel.send(True)
 
     def appendleft(self, x):
         """Append item *x* to the start of the queue."""
         collections.deque.appendleft(self, x)
-        if self.channel.balance < 0:
+        if self.channel.has_receiver():
             self.channel.send(True)
 
 class Mailbox(Deque):
@@ -670,7 +670,10 @@ class Channel(object):
         """Receive from the channel. If there is no sender, the caller will block until there is one.
         Optionally you can specify a *timeout*. If a sender does not show up within the *timeout* period a
         :class:`TimeoutError` is raised. The method returns the value given by the sender."""
-        if timeout == TIMEOUT_NEVER:
+        if self.balance > 0: 
+            #we know there is a sender so no need for timeout logic
+            return self._channel.receive()
+        elif timeout == TIMEOUT_NEVER:
             #no timeout
             return self._channel.receive()
         else:
@@ -707,7 +710,10 @@ class Channel(object):
         receiver.
         Optionally you can specify a *timeout*. If a receiver does not show up within the *timeout* period a
         :class:`TimeoutError` is raised."""
-        if timeout == TIMEOUT_NEVER:
+        if self.balance < 0: 
+            #if we know there is a receiver, we don't need timeout logic
+            self._channel.send(value) 
+        elif timeout == TIMEOUT_NEVER:
             #no timeout
             self._channel.send(value)
         else:

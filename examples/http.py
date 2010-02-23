@@ -13,5 +13,5 @@ def main():
     server.serve(('localhost', 8080))
 
 if __name__ == '__main__':
-    logging.basicConfig()
+    logging.basicConfig(level = logging.DEBUG)
     dispatch(main)
