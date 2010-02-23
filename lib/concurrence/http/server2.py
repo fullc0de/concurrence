@@ -79,7 +79,7 @@ class WSGIRequest(object):
         self.response_status = httplib.OK
         self.response_exc_info = None
 
-        print self.environ
+        #print self.environ
 
     def start_response(self, status, response_headers, exc_info = None):
         self.response_status = status
@@ -99,7 +99,7 @@ class HTTPConnection(object):
     def __init__(self, server, client_socket):
         self._server = server
         self._stream = BufferedStream(client_socket)
-        print 'new con'
+        #print 'new con'
 
     def _write_response(self, version, status, headers, response):
 
@@ -152,11 +152,19 @@ class HTTPConnection(object):
         request = self._read_request()
         response = self._server.handle_request(request)
         self._write_response(request.version, request.response_status, request.response_headers, response)  
-        self._stream._stream.readable.notify(self.handle)
+        if request.version == 'HTTP/1.0':
+            self._close()
+        else:
+            self._stream._stream.readable.notify(self.handle, 10)
+
+    def _close(self):
+        self._stream.close()
 
     def handle(self, has_timedout = False):
-        print 'hndl'
-        Tasklet.defer(self._handle_request)
+        if has_timedout:
+            self._stream.close()
+        else:
+            Tasklet.defer(self._handle_request)
 
 class WSGIServer(object):
     """A HTTP/1.1 Web server with WSGI application interface.
