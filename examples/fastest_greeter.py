@@ -29,6 +29,7 @@ def server():
     new tasks for handling the incoming requests"""
     #listen
     server_socket = Socket.server(('localhost', 8100), backlog=2048)
+    #and fork off some workers to accept requests
     for i in range(HTTP_WORKERS):
         pid = os.fork()
         if pid == 0:
