@@ -41,9 +41,9 @@ cdef void cb_request_method(void *data, char *at, size_t length):
 cdef void cb_request_uri(void *data, char *at, size_t length):
     (<HTTPParser>data)._cb_request_uri(PyString_FromStringAndSize(at, length))
 
-cdef void cb_fragment(void *data, char *at, size_t length):
-    #(<HTTPParser>data)._cb_fragment(PyString_FromStringAndSize(at, length))
-    pass #unused for now, fragment is not part of cgi spec
+#cdef void cb_fragment(void *data, char *at, size_t length):
+#    (<HTTPParser>data)._cb_fragment(PyString_FromStringAndSize(at, length))
+#    unused for now, fragment is not part of cgi spec
 
 cdef void cb_request_path(void *data, char *at, size_t length):
     (<HTTPParser>data)._cb_request_path(PyString_FromStringAndSize(at, length))
@@ -54,9 +54,9 @@ cdef void cb_query_string(void *data, char *at, size_t length):
 cdef void cb_http_version(void *data, char *at, size_t length):
     (<HTTPParser>data)._cb_http_version(PyString_FromStringAndSize(at, length))
 
-cdef void cb_header_done(void *data, char *at, size_t length):
-    #(<HTTPParser>data)._cb_header_done(PyString_FromStringAndSize(at, length))
-    pass #unused
+#cdef void cb_header_done(void *data, char *at, size_t length):
+#    #(<HTTPParser>data)._cb_header_done(PyString_FromStringAndSize(at, length))
+#    pass #unused
 
 cdef void cb_field(void *data, char *field, size_t flen, char *value, size_t vlen):
     (<HTTPParser>data)._cb_field(PyString_FromStringAndSize(field, flen), PyString_FromStringAndSize(value, vlen))
@@ -72,7 +72,7 @@ cdef class HTTPParser:
     cdef readonly environ
 
     def __cinit__(self, Buffer buffer):
-        self._parser = http_parser_alloc(<void *>self, cb_request_method, cb_request_uri, cb_fragment, cb_request_path, cb_query_string, cb_http_version, cb_header_done, cb_field)
+        self._parser = http_parser_alloc(<void *>self, cb_request_method, cb_request_uri, NULL, cb_request_path, cb_query_string,cb_http_version, NULL, cb_field)
         http_parser_init(self._parser)
 
     def __init__(self, Buffer buffer):
@@ -91,8 +91,8 @@ cdef class HTTPParser:
     cdef _cb_request_path(self, path):
         self.environ['PATH_INFO'] = path
 
-    cdef _cb_fragment(self, fragment):
-        pass #unused, not part of cgi spec
+#    cdef _cb_fragment(self, fragment):
+#        pass #unused, not part of cgi spec
 
     cdef _cb_request_uri(self, uri):
         self.environ['REQUEST_URI'] = uri
@@ -100,8 +100,8 @@ cdef class HTTPParser:
     cdef _cb_http_version(self, version):
         self.environ['HTTP_VERSION'] = version
 
-    cdef _cb_header_done(self, hd):
-        pass #unused
+#    cdef _cb_header_done(self, hd):
+#        pass #unused
 
     cdef _cb_field(self, name, value):
         key = 'HTTP_' + name
@@ -112,7 +112,7 @@ cdef class HTTPParser:
 
     def parse(self):
         cdef size_t nread
-        cdef int r
+        cdef int remaining
         if http_parser_is_finished(self._parser):
             raise HTTPParserError("cannot parse: parser already finished")
         elif http_parser_has_error(self._parser):
@@ -124,7 +124,10 @@ cdef class HTTPParser:
                 raise HTTPParserError("parse error")
             else:
                 self._buffer._position += self._buffer._position + nread
-                return self.is_finished()
+                if http_parser_is_finished(self._parser):
+                    return True
+                else:
+                    return False
         else:
             raise BufferUnderflowError()
 

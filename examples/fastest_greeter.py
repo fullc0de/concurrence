@@ -1,3 +1,5 @@
+#multi-worker process webserver
+
 from concurrence import dispatch, Tasklet
 from concurrence.io import Buffer, Socket
 
@@ -8,13 +10,10 @@ HTTP_WORKERS = 4
 
 def handle(client_socket):
     buffer = Buffer(1024)
-    client_socket.read(buffer)
+    client_socket.read(buffer) #read the request
     buffer.clear()
     buffer.write_bytes(
             "HTTP/1.0 200 OK\r\n"                     \
-            "Server: c-raw/0.0\r\n"                   \
-            "Date: Sat, 12 Dec 2009 21:29:00 GMT\r\n" \
-            "Content-Type: text/plain\r\n"            \
             "Content-Length: 13\r\n"                  \
             "Connection: close\r\n"                   \
             "\r\n"                                    \
@@ -27,9 +26,9 @@ def handle(client_socket):
 def server():
     """accepts connections on a socket, and dispatches
     new tasks for handling the incoming requests"""
-    #listen
-    server_socket = Socket.server(('localhost', 8100), backlog=2048)
-    #and fork off some workers to accept requests
+    #parent process opens socket and listens:
+    server_socket = Socket.server(('localhost', HTTP_PORT), backlog=2048)
+    #fork some worker processes
     for i in range(HTTP_WORKERS):
         pid = os.fork()
         if pid == 0:
