@@ -25,7 +25,7 @@ class HTTPRequest(object):
     def _set_body(self, body):
         if body is not None:
             assert type(body) == str
-            self.add_header('Content_length', len(body))
+            self.add_header('Content-length', len(body))
         self._body = body
 
     def _get_body(self):
