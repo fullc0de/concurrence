@@ -137,7 +137,11 @@ class HTTPConnection(object):
     def _read_request(self):
 
         with self._stream.get_reader() as reader:
-            reader.fill() #initial fill
+            try:
+                reader.fill() #initial fill
+            except EOFError:
+                return None
+
             parser = HTTPParser(reader.buffer)
             while True:
                 #parse the buffer
@@ -150,6 +154,9 @@ class HTTPConnection(object):
 
     def _handle_request(self):
         request = self._read_request()
+        if request == None:
+           return
+        
         response = self._server.handle_request(request)
         self._write_response(request.version, request.response_status, request.response_headers, response)  
         if request.version == 'HTTP/1.0':

@@ -60,7 +60,14 @@ class WSGIInputStream(object):
             return '' #EOF
 
     def readline(self):
-        assert False, 'TODO'
+		line = ''
+		while True:
+			data = self._file.read(1)
+			line += data
+			if data == '\n':
+				break
+		self._n -= len(line)
+		return line
 
     def readlines(self):
         assert False, 'TODO'
@@ -121,10 +128,10 @@ class WSGIRequest(object):
     def write_response(self, response, writer):
         self.state = self.STATE_WRITING_HEADER
 
-        if self.version == 'HTTP/1.0':
-            chunked = False
-        else:
-            chunked = True
+        #if self.version == 'HTTP/1.0':
+        chunked = False
+        #else:
+        #    chunked = True
 
         writer.clear()
 
