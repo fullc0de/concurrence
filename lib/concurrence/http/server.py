@@ -46,9 +46,13 @@ class WSGIInputStream(object):
         if self._n is not None:
             self._channel.receive() #wait till handler has read all input data
 
-    def read(self, n):
+    def read(self, n = -1):
         if self._n > 0:
-            data = self._file.read(min(self._n, n))
+            data = None
+            if n == -1:
+                data = self._file.read(self._n)
+            else:
+                data = self._file.read(min(self._n, n))
             self._n -= len(data)
             if self._n == 0:
                 self._n = None
